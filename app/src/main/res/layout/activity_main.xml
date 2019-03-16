@@ -32,6 +32,7 @@
         android:layout_below="@+id/text_connection_status"
         android:layout_marginTop="12dp"
         android:layout_marginLeft="10dp"
-        android:layout_marginRight="10dp"/>
+        android:layout_marginRight="10dp"
+        android:background="#c1d11b" />
 
 </RelativeLayout>
