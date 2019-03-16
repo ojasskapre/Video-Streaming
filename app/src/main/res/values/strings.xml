@@ -2,4 +2,7 @@
     <string name="app_name">VideoStreaming</string>
     <string name="discover">Discover</string>
     <string name="conn_status">Connection Status</string>
+    <string name="stream">Stream</string>
+    <string name="send">SEND</string>
+    <string name="receive">RECEIVE</string>
 </resources>

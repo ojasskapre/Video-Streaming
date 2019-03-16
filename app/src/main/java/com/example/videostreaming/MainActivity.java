@@ -2,6 +2,7 @@ package com.example.videostreaming;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.wifi.WifiManager;
 import android.net.wifi.p2p.WifiP2pConfig;
@@ -19,11 +20,16 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.IOException;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
+    private static final int PORT = 8889;
     Button mDiscoverButton;
     ListView mListView;
     TextView mConnectionStatusText;
@@ -35,7 +41,8 @@ public class MainActivity extends AppCompatActivity {
     List<WifiP2pDevice> peers = new ArrayList<>();
     String[] deviceNameArray;
     WifiP2pDevice[] deviceArray;
-
+    ServerClass serverClass;
+    ClientClass clientClass;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -137,9 +144,13 @@ public class MainActivity extends AppCompatActivity {
             final InetAddress groupOwnerAddress = info.groupOwnerAddress;
 
             if(info.groupFormed && info.isGroupOwner){
-                mConnectionStatusText.setText("CONNECTED");
+                mConnectionStatusText.setText("HOST");
+                serverClass = new ServerClass();
+                serverClass.start();
             }else if(info.groupFormed){
-                mConnectionStatusText.setText("CONNECTED");
+                mConnectionStatusText.setText("CLIENT");
+                clientClass = new ClientClass(groupOwnerAddress);
+                clientClass.start();
             }
         }
     };
@@ -165,5 +176,44 @@ public class MainActivity extends AppCompatActivity {
                 });
             }
         });
+    }
+
+    public class ServerClass extends Thread {
+        Socket socket;
+        ServerSocket serverSocket;
+
+        @Override
+        public void run() {
+            try {
+                serverSocket = new ServerSocket(PORT);
+                socket = serverSocket.accept();
+                SocketHandler.setSocket(socket);
+                startActivity(new Intent(getApplicationContext(), FileSelectActivity.class));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public class ClientClass extends Thread {
+        Socket socket;
+        String hostAddress;
+
+        ClientClass(InetAddress address) {
+            this.socket = new Socket();
+            this.hostAddress = address.getHostAddress();
+        }
+
+        @Override
+        public void run() {
+            try {
+                socket.connect(new InetSocketAddress(hostAddress, PORT), 500);
+                SocketHandler.setSocket(socket);
+
+                startActivity(new Intent(getApplicationContext(), FileSelectActivity.class));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }
