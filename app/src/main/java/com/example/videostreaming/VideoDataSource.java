@@ -30,7 +30,7 @@ public class VideoDataSource extends MediaDataSource {
                 int count = 0;
                 ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
                 int read = 0;
-                int x = 307200;
+                int x = 2048000;
                 boolean flag = true;
                 while (read != -1){ //While there is more data
                     //Read in bytes to data buffer
@@ -40,7 +40,7 @@ public class VideoDataSource extends MediaDataSource {
                     byteArrayOutputStream.write(read);
 
                     if (count > x || read == -1){
-                        x = 25600;
+                        x = 250000;
                         Log.e("FILE_READ", "READing from output stream");
                         byteArrayOutputStream.flush();
                         byte[] temp = byteArrayOutputStream.toByteArray();
