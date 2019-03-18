@@ -96,11 +96,19 @@ public class FileSelectActivity extends AppCompatActivity {
                 @Override
                 public void run() {
                     try {
-                        outputStream.write(bytes);
+                        int off = 0, len = 1024000;
+                        while (off < bytes.length) {
+                            outputStream.write(bytes, off, Math.min(len, (bytes.length - off)));
+                            outputStream.flush();
+                            off += len;
+                            Log.e("FILE_READ", "Output stream writing");
+                        }
                         Log.e("FILE_READ", "Output stream write complete");
                     } catch (IOException e) {
+                        Log.e("FILE_READ", e.toString() );
                         e.printStackTrace();
                     } catch (Exception e){
+                        Log.e("FILE_READ", e.toString() );
                         e.printStackTrace();
                     }
                 }

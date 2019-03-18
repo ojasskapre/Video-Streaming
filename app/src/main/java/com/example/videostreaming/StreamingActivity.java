@@ -12,7 +12,7 @@ import android.view.SurfaceView;
 
 public class StreamingActivity extends Activity implements SurfaceHolder.Callback {
 
-    MediaPlayer mp;
+    static MediaPlayer mp;
     boolean isPaused;
 
     @Override
@@ -34,6 +34,12 @@ public class StreamingActivity extends Activity implements SurfaceHolder.Callbac
     public void surfaceCreated(SurfaceHolder holder) {
         try {
             mp.setDisplay(holder);
+            mp.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+                @Override
+                public void onPrepared(MediaPlayer mp) {
+                    mp.start();
+                }
+            });
             if (!isPaused) {
                 VideoDataSource dataSource = new VideoDataSource();
                 dataSource.downloadVideo(new VideoDownloadListener() {
@@ -48,12 +54,6 @@ public class StreamingActivity extends Activity implements SurfaceHolder.Callbac
                     }
                 });
                 mp.setDataSource(dataSource);
-                mp.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-                    @Override
-                    public void onPrepared(MediaPlayer mp) {
-                        mp.start();
-                    }
-                });
             } else {
                 mp.start();
             }

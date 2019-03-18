@@ -12,13 +12,15 @@ import java.net.Socket;
 
 @RequiresApi(api = Build.VERSION_CODES.M)
 public class VideoDataSource extends MediaDataSource {
-
-    private volatile byte[] videoBuffer = new byte[40000000];
-
+    final int SIZE = 20*1024000;
+    private volatile static int pause_position = 0;
+    private volatile byte[] videoBuffer = new byte[SIZE];
+    private static final String TAG = "buffer";
     private volatile VideoDownloadListener listener;
     private volatile  boolean isDownloading;
-
-
+    private volatile long curr_len = 0;
+    private int threshold = 409600;
+    static volatile long mediaplayer_position = -1;
     Runnable downloadVideoRunnable = new Runnable() {
         @Override
         public void run() {
@@ -26,7 +28,6 @@ public class VideoDataSource extends MediaDataSource {
                 Socket socket = SocketHandler.getSocket();
                 InputStream inputStream = socket.getInputStream();
                 //For appending incoming bytes
-                int curr_len = 0;
                 int count = 0;
                 ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
                 int read = 0;
@@ -40,12 +41,12 @@ public class VideoDataSource extends MediaDataSource {
                     byteArrayOutputStream.write(read);
 
                     if (count > x || read == -1){
-                        x = 250000;
+                        x = 102400;
                         Log.e("FILE_READ", "READing from output stream");
                         byteArrayOutputStream.flush();
                         byte[] temp = byteArrayOutputStream.toByteArray();
                         byteArrayOutputStream.reset();
-                        System.arraycopy(temp, 0, videoBuffer, curr_len, temp.length);
+                        System.arraycopy(temp, 0, videoBuffer, (int)curr_len % SIZE, temp.length);
                         curr_len += temp.length;
                         Log.d("buffer", "flushed data "+curr_len);
                         if (flag) {
@@ -55,6 +56,8 @@ public class VideoDataSource extends MediaDataSource {
                         count = 0;
                     }
                 }
+
+                Log.e(TAG, "Input stream read complete");
                 inputStream.close();
 
                 //Flush and set buffer.
@@ -70,6 +73,7 @@ public class VideoDataSource extends MediaDataSource {
             }
         }
     };
+    private volatile boolean pause_thread_start = true;
 
     public VideoDataSource(){
         isDownloading = false;
@@ -84,12 +88,54 @@ public class VideoDataSource extends MediaDataSource {
         isDownloading = true;
     }
 
+    Thread check_buffer = new Thread(new Runnable() {
+        @Override
+        public void run() {
+            while(mediaplayer_position + threshold > curr_len && mediaplayer_position != -1){
+                Log.e("buffer", mediaplayer_position + " " + curr_len);
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            StreamingActivity.mp.seekTo(pause_position);
+            StreamingActivity.mp.start();
+            pause_thread_start = true;
+            Log.e("buffer", "Starting player again");
+        }
+    });
+
     @Override
     public synchronized int readAt(long position, byte[] buffer, int offset, int size) throws IOException {
         synchronized (videoBuffer){
             int length = videoBuffer.length;
             Log.d("buffer", "position: "+position);
             Log.d("buffer", "size: "+size);
+
+//            if(position > curr_len){
+//                pause_position = StreamingActivity.mp.getCurrentPosition();
+//                mediaplayer_position = position;
+//                StreamingActivity.mp.pause();
+//                Log.e("buffer", "Paused due to buffering");
+//                if(pause_thread_start){
+//                    pause_thread_start = false;
+//                    check_buffer.start();
+//                }
+//
+////                try {
+////                    check_buffer.join();
+//////                    Thread.sleep(1000);
+////                } catch (InterruptedException e) {
+////                    e.printStackTrace();
+////                }
+//            }
+
+            if(position + size >SIZE){
+                Log.e(TAG, "end reached,reset media player");
+                StreamingActivity.mp.seekTo(0);
+            }
+            position %= SIZE;
             if (position >= length) {
                 Log.d("buffer", "buffer end, position "+position+" len"+length);
                 return -1; // -1 indicates EOF
