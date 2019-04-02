@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.Toast;
 
 import java.io.BufferedInputStream;
@@ -23,7 +24,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 
 public class FileSelectActivity extends AppCompatActivity {
-    Button btnSend, btnReceive;
+    ImageButton btnSend, btnReceive;
     OutputStream outputStream;
     private String file_name;
 
