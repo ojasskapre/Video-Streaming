@@ -19,14 +19,19 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 
 public class FileSelectActivity extends AppCompatActivity {
     ImageButton btnSend, btnReceive;
-    OutputStream outputStream;
     private String file_name;
+    InetAddress inetAddress;
+    DatagramSocket socket;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,14 +57,8 @@ public class FileSelectActivity extends AppCompatActivity {
             }
         });
 
-        Socket socket = SocketHandler.getSocket();
-
-        try {
-            outputStream = socket.getOutputStream();
-            Log.e("OUTPUT_SOCKET", "SUCCESS");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        socket = SocketHandler.getSocket();
+        inetAddress = SocketHandler.getInetAddress();
     }
 
     @Override
@@ -78,7 +77,6 @@ public class FileSelectActivity extends AppCompatActivity {
     }
 
     private void sendVideoFile() {
-//        String internal_storage_path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getAbsolutePath();
         String full_file_path = file_name;
         Log.e("FILE_PATH", full_file_path);
         File file = new File(full_file_path);
@@ -97,10 +95,16 @@ public class FileSelectActivity extends AppCompatActivity {
                 @Override
                 public void run() {
                     try {
-                        int off = 0, len = 1024000;
+                        int off = 0, len = 50 * 1024;
                         while (off < bytes.length) {
-                            outputStream.write(bytes, off, Math.min(len, (bytes.length - off)));
-                            outputStream.flush();
+//                            byte temp[] = Arrays.copyOfRange(bytes, off, len);
+                            DatagramPacket dp = new DatagramPacket(
+                                    bytes,
+                                    len,
+                                    inetAddress,
+                                    8889
+                            );
+                            socket.send(dp);
                             off += len;
                             Log.e("FILE_READ", "Output stream writing");
                         }

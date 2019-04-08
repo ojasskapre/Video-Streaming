@@ -21,10 +21,12 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
+import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -179,15 +181,16 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public class ServerClass extends Thread {
-        Socket socket;
-        ServerSocket serverSocket;
+//        Socket socket;
+//        ServerSocket serverSocket;
+        DatagramSocket serverSocket;
 
         @Override
         public void run() {
             try {
-                serverSocket = new ServerSocket(PORT);
-                socket = serverSocket.accept();
-                SocketHandler.setSocket(socket);
+                serverSocket = new DatagramSocket(PORT);
+//                socket = serverSocket.accept();
+                SocketHandler.setSocket(serverSocket);
                 startActivity(new Intent(getApplicationContext(), FileSelectActivity.class));
             } catch (IOException e) {
                 e.printStackTrace();
@@ -196,24 +199,28 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public class ClientClass extends Thread {
-        Socket socket;
+//        Socket socket;
+        DatagramSocket socket;
         String hostAddress;
+        InetAddress inetAddress;
 
         ClientClass(InetAddress address) {
-            this.socket = new Socket();
+            try {
+                this.socket = new DatagramSocket();
+            } catch (SocketException e) {
+                e.printStackTrace();
+            }
             this.hostAddress = address.getHostAddress();
+            this.inetAddress = address;
         }
 
         @Override
         public void run() {
-            try {
-                socket.connect(new InetSocketAddress(hostAddress, PORT), 500);
-                SocketHandler.setSocket(socket);
-
-                startActivity(new Intent(getApplicationContext(), FileSelectActivity.class));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            //                socket.connect(new InetSocketAddress(hostAddress, PORT), 500);
+            socket.connect(inetAddress, PORT);
+            SocketHandler.setSocket(socket);
+            SocketHandler.setInetAddress(inetAddress);
+            startActivity(new Intent(getApplicationContext(), FileSelectActivity.class));
         }
     }
 }
